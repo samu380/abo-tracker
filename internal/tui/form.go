@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/lipgloss"
 
 	"abo-tracker/internal/sub"
 )
@@ -19,14 +20,12 @@ const (
 	fieldNotice
 	fieldCharge
 	fieldNote
-	fieldSave
 	fieldCount
 )
 
 const (
 	priceFieldAmount = iota
 	priceFieldMonth
-	priceFieldSave
 	priceFieldCount
 )
 
@@ -35,7 +34,6 @@ type fieldKind int
 const (
 	kindText fieldKind = iota
 	kindSelect
-	kindAction
 )
 
 type formField struct {
@@ -71,7 +69,7 @@ func (e fieldError) Error() string { return e.text }
 
 func buildForm(existing *sub.Subscription) formState {
 	f := formState{
-		title:  "Neues Abo",
+		title:  "NEUES ABO",
 		fields: make([]formField, fieldCount),
 	}
 	f.fields[fieldName] = textField("Name", "z. B. Netflix", 80)
@@ -82,14 +80,13 @@ func buildForm(existing *sub.Subscription) formState {
 	f.fields[fieldNotice] = textField("Frist (Tage)", "0", 4)
 	f.fields[fieldCharge] = selectField("Abbuchung", []string{"Automatisch", "Manuell"}, 0)
 	f.fields[fieldNote] = textField("Notiz", "optional", 200)
-	f.fields[fieldSave] = formField{label: "Speichern", kind: kindAction}
 	f.fields[fieldNotice].input.SetValue("0")
 
 	if existing == nil {
 		return f
 	}
 	f.id = existing.ID
-	f.title = "Abo bearbeiten"
+	f.title = "ABO BEARBEITEN"
 	f.fields[fieldName].input.SetValue(existing.Name)
 	f.fields[fieldAmount].input.SetValue(sub.FormatAmount(existing.AmountCents))
 	f.fields[fieldInterval].option = intervalIndex(existing.Interval)
@@ -109,12 +106,11 @@ func buildPriceForm(existing sub.Subscription) formState {
 	f := formState{
 		kind:   formPrice,
 		id:     existing.ID,
-		title:  "Preis ab Monat · " + existing.Name,
+		title:  "PREIS AB MONAT · " + existing.Name,
 		fields: make([]formField, priceFieldCount),
 	}
 	f.fields[priceFieldAmount] = textField("Neuer Betrag (€)", "15,99", 16)
 	f.fields[priceFieldMonth] = textField("Ab Monat", "03.2027", 7)
-	f.fields[priceFieldSave] = formField{label: "Speichern", kind: kindAction}
 	return f
 }
 
@@ -186,7 +182,11 @@ func textField(label, placeholder string, limit int) formField {
 	ti.Placeholder = placeholder
 	ti.CharLimit = limit
 	ti.Width = 32
-	ti.PlaceholderStyle = mutedStyle
+	ti.TextStyle = lipgloss.NewStyle().Foreground(cFg).Background(cPanel)
+	ti.PlaceholderStyle = lipgloss.NewStyle().Foreground(cDim).Background(cPanel)
+	ti.PromptStyle = lipgloss.NewStyle().Background(cPanel)
+	ti.Cursor.Style = lipgloss.NewStyle().Foreground(cAccent)
+	ti.Cursor.TextStyle = ti.TextStyle
 	return formField{label: label, kind: kindText, input: ti}
 }
 
